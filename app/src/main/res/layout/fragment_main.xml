@@ -7,7 +7,7 @@
     tools:context="murki.githubexplorer.ui.MainFragment">
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/main_recycler_view"
+        android:id="@+id/mainRecyclerView"
         android:scrollbars="vertical"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
