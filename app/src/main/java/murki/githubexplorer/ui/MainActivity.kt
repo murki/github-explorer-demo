@@ -1,7 +1,8 @@
-package murki.githubexplorer
+package murki.githubexplorer.ui
 
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
+import murki.githubexplorer.R
 
 class MainActivity : AppCompatActivity() {
 
