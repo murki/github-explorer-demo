@@ -7,7 +7,7 @@ import murki.githubexplorer.R
 import murki.githubexplorer.databinding.RepoItemBinding
 import murki.githubexplorer.viewmodel.RepoItemVM
 
-class MainAdapter(var dataset : List<RepoItemVM>) : RecyclerView.Adapter<DataBindingHolder<RepoItemBinding>>() {
+class MainAdapter(private var dataset : List<RepoItemVM>?) : RecyclerView.Adapter<DataBindingHolder<RepoItemBinding>>() {
 
     override fun onCreateViewHolder(parent: ViewGroup?, viewType: Int): DataBindingHolder<RepoItemBinding> {
         val view = LayoutInflater.from(parent?.context).inflate(R.layout.repo_item, parent, false)
@@ -15,10 +15,10 @@ class MainAdapter(var dataset : List<RepoItemVM>) : RecyclerView.Adapter<DataBin
     }
 
     override fun onBindViewHolder(holder: DataBindingHolder<RepoItemBinding>?, position: Int) {
-        holder?.binding?.viewModel = dataset[0]
+        holder?.binding?.viewModel = dataset?.get(position)
     }
 
     override fun getItemCount(): Int {
-        return dataset.size
+        return dataset?.size ?: 0
     }
 }
