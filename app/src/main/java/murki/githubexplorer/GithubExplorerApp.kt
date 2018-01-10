@@ -6,20 +6,14 @@ import okhttp3.OkHttpClient
 
 class GithubExplorerApp : Application() {
 
-    var apolloClient: ApolloClient? = null
-        private set
+    val apolloClient: ApolloClient = ApolloClient.builder()
+            .serverUrl("https://api.github.com/graphql")
+            .okHttpClient(OkHttpClient.Builder()
+                    .addInterceptor { chain ->
+                        chain.proceed(chain.request().newBuilder()
+                                .header("Authorization", "bearer ${BuildConfig.GITHUB_API_KEY}")
+                                .build())
+                    }.build())
+            .build()
 
-    override fun onCreate() {
-        super.onCreate()
-
-        // TODO: Inject
-        val okHttpClient: OkHttpClient = OkHttpClient.Builder().addInterceptor {
-            chain -> chain.proceed(chain.request().newBuilder().header("Authorization", "bearer ${BuildConfig.GITHUB_API_KEY}").build())
-        }.build()
-
-        apolloClient = ApolloClient.builder()
-                .serverUrl("https://api.github.com/graphql")
-                .okHttpClient(okHttpClient)
-                .build()
-    }
 }

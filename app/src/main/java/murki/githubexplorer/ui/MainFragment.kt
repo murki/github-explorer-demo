@@ -12,6 +12,7 @@ import com.apollographql.apollo.ApolloCall
 import com.apollographql.apollo.api.Response
 import com.apollographql.apollo.exception.ApolloException
 import kotlinx.android.synthetic.main.fragment_main.mainRecyclerView
+import kotlinx.android.synthetic.main.fragment_main.mainSwipeRefresh
 import murki.githubexplorer.GithubExplorerApp
 
 import murki.githubexplorer.R
@@ -29,12 +30,28 @@ class MainFragment : Fragment() {
     override fun onActivityCreated(savedInstanceState: Bundle?) {
         super.onActivityCreated(savedInstanceState)
 
+        mainSwipeRefresh.setColorSchemeResources(android.R.color.holo_blue_dark)
+        mainSwipeRefresh.setOnRefreshListener {
+            fetchItems()
+        }
+
         mainRecyclerView.setHasFixedSize(true)
         mainRecyclerView.adapter = MainAdapter(emptyList())
 
+        fetchItems()
+    }
+
+    private fun isRefreshing(isRefreshing: Boolean) {
+        mainSwipeRefresh.post({
+            mainSwipeRefresh.isRefreshing = isRefreshing
+        })
+    }
+
+    fun fetchItems() {
+        isRefreshing(true)
         val githubExplorerApp = activity?.applicationContext as GithubExplorerApp
 
-        githubExplorerApp.apolloClient?.query(
+        githubExplorerApp.apolloClient.query(
                 MyReposQuery.builder()
                         .last(10)
                         .build()
@@ -45,6 +62,7 @@ class MainFragment : Fragment() {
                     it -> RepoItemVM(it.name(), it.description())
                 }
                 activity?.runOnUiThread {
+                    isRefreshing(false)
                     mainRecyclerView.swapAdapter(MainAdapter(repoItemVMs), false)
                 }
             }
@@ -52,6 +70,7 @@ class MainFragment : Fragment() {
             override fun onFailure(e: ApolloException) {
                 Log.e(CLASSNAME, "onFailure() - ERROR", e)
                 activity?.runOnUiThread {
+                    isRefreshing(false)
                     Toast.makeText(activity, "OnError=" + e.message, Toast.LENGTH_LONG).show()
                 }
             }
