@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import com.apollographql.apollo.ApolloCall
+import com.apollographql.apollo.ApolloQueryCall
 import com.apollographql.apollo.api.Response
 import com.apollographql.apollo.exception.ApolloException
 import kotlinx.android.synthetic.main.fragment_main.mainRecyclerView
@@ -21,6 +22,8 @@ import murki.githubexplorer.viewmodel.RepoItemVM
 
 
 class MainFragment : Fragment() {
+
+    private var itemsCall: ApolloQueryCall<MyReposQuery.Data>? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
@@ -41,29 +44,39 @@ class MainFragment : Fragment() {
         fetchItems()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        cancelRequest()
+    }
+
     private fun isRefreshing(isRefreshing: Boolean) {
-        mainSwipeRefresh.post({
+        mainSwipeRefresh?.post({
             mainSwipeRefresh.isRefreshing = isRefreshing
         })
     }
 
     fun fetchItems() {
         isRefreshing(true)
+
+        cancelRequest()
+
         val githubExplorerApp = activity?.applicationContext as GithubExplorerApp
 
-        githubExplorerApp.apolloClient.query(
+        itemsCall = githubExplorerApp.apolloClient.query(
                 MyReposQuery.builder()
                         .last(10)
                         .build()
-        )?.enqueue(object : ApolloCall.Callback<MyReposQuery.Data>() {
+        )
+
+        itemsCall?.enqueue(object : ApolloCall.Callback<MyReposQuery.Data>() {
             override fun onResponse(response: Response<MyReposQuery.Data>) {
                 Log.d(CLASSNAME, "onResponse() - Displaying card VMs in Adapter")
-                val repoItemVMs: List<RepoItemVM>? = response.data()?.viewer()?.repositories()?.nodes()?.map {
-                    it -> RepoItemVM(it.name(), it.description())
+                val repoItemVMs: List<RepoItemVM>? = response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
+                    RepoItemVM(it.name(), it.description())
                 }
                 activity?.runOnUiThread {
                     isRefreshing(false)
-                    mainRecyclerView.swapAdapter(MainAdapter(repoItemVMs), false)
+                    mainRecyclerView?.swapAdapter(MainAdapter(repoItemVMs), false)
                 }
             }
 
@@ -75,6 +88,10 @@ class MainFragment : Fragment() {
                 }
             }
         })
+    }
+
+    private fun cancelRequest() {
+        itemsCall?.cancel()
     }
 
     companion object {
