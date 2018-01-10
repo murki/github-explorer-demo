@@ -2,6 +2,7 @@ package murki.githubexplorer.ui
 
 
 import android.os.Bundle
+import android.os.Parcelable
 import android.support.v4.app.Fragment
 import android.util.Log
 import android.view.LayoutInflater
@@ -39,9 +40,21 @@ class MainFragment : Fragment() {
         }
 
         mainRecyclerView.setHasFixedSize(true)
-        mainRecyclerView.adapter = MainAdapter(emptyList())
+        showListItems(ArrayList())
 
-        fetchItems()
+        when(savedInstanceState) {
+            null -> fetchItems()
+            else -> reloadFromSavedState(savedInstanceState)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        val adapter = mainRecyclerView.adapter as MainAdapter?
+        // using let to only execute block if not null
+        adapter?.dataset?.let {
+            outState.putParcelableArrayList(MAIN_ADAPTER_LIST, it as ArrayList<out Parcelable>)
+        }
     }
 
     override fun onDestroy() {
@@ -55,7 +68,11 @@ class MainFragment : Fragment() {
         })
     }
 
-    fun fetchItems() {
+    private fun reloadFromSavedState(savedInstanceState: Bundle) {
+        showListItems(savedInstanceState.getParcelableArrayList(MAIN_ADAPTER_LIST))
+    }
+
+    private fun fetchItems() {
         isRefreshing(true)
 
         cancelRequest()
@@ -76,7 +93,7 @@ class MainFragment : Fragment() {
                 }
                 activity?.runOnUiThread {
                     isRefreshing(false)
-                    mainRecyclerView?.swapAdapter(MainAdapter(repoItemVMs), false)
+                    showListItems(ArrayList(repoItemVMs))
                 }
             }
 
@@ -90,11 +107,16 @@ class MainFragment : Fragment() {
         })
     }
 
+    private fun showListItems(repoItemVMs: ArrayList<RepoItemVM>?) {
+        mainRecyclerView?.swapAdapter(MainAdapter(repoItemVMs), false)
+    }
+
     private fun cancelRequest() {
         itemsCall?.cancel()
     }
 
     companion object {
         private val CLASSNAME: String = "MainFragment"
+        private val MAIN_ADAPTER_LIST: String = "MainAdapterListKey"
     }
 }
