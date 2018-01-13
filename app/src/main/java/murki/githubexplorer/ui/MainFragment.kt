@@ -15,7 +15,9 @@ import com.apollographql.apollo.api.Response
 import com.apollographql.apollo.exception.ApolloException
 import com.apollographql.apollo.rx2.Rx2Apollo
 import io.reactivex.Observable
+import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.fragment_main.mainRecyclerView
 import kotlinx.android.synthetic.main.fragment_main.mainSwipeRefresh
 import murki.githubexplorer.GithubExplorerApp
@@ -45,7 +47,7 @@ class MainFragment : Fragment() {
         mainRecyclerView.setHasFixedSize(true)
         showListItems(ArrayList())
 
-        when(savedInstanceState) {
+        when (savedInstanceState) {
             null -> fetchItems()
             else -> reloadFromSavedState(savedInstanceState)
         }
@@ -88,23 +90,23 @@ class MainFragment : Fragment() {
                         .build())
         )
 
-        itemsFetchDisposable = itemsFetchObservable.subscribe({ response ->
-            Log.d(CLASSNAME, "onResponse() - Displaying card VMs in Adapter")
-            // TODO: deal with response.errors()
-            val repoItemVMs: List<RepoItemVM>? = response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
-                RepoItemVM(it.name(), it.description())
-            }
-            activity?.runOnUiThread {
-                isRefreshing(false)
-                showListItems(ArrayList(repoItemVMs))
-            }
-        }, { error ->
-            Log.e(CLASSNAME, "onFailure() - ERROR", error)
-            activity?.runOnUiThread {
-                isRefreshing(false)
-                Toast.makeText(activity, "OnError=" + error.message, Toast.LENGTH_LONG).show()
-            }
-        })
+        itemsFetchDisposable = itemsFetchObservable
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe({ response ->
+                    Log.d(CLASSNAME, "onResponse() - Displaying card VMs in Adapter")
+                    // TODO: deal with response.errors()
+                    // TODO: Move mapping into ViewModel
+                    val repoItemVMs: List<RepoItemVM>? = response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
+                        RepoItemVM(it.name(), it.description())
+                    }
+                    isRefreshing(false)
+                    showListItems(ArrayList(repoItemVMs))
+                }, { error ->
+                    Log.e(CLASSNAME, "onFailure() - ERROR", error)
+                    isRefreshing(false)
+                    Toast.makeText(activity, "OnError=" + error.message, Toast.LENGTH_LONG).show()
+                })
     }
 
     private fun showListItems(repoItemVMs: ArrayList<RepoItemVM>?) {
