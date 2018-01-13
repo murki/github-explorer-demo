@@ -13,6 +13,9 @@ import com.apollographql.apollo.ApolloCall
 import com.apollographql.apollo.ApolloQueryCall
 import com.apollographql.apollo.api.Response
 import com.apollographql.apollo.exception.ApolloException
+import com.apollographql.apollo.rx2.Rx2Apollo
+import io.reactivex.Observable
+import io.reactivex.disposables.Disposable
 import kotlinx.android.synthetic.main.fragment_main.mainRecyclerView
 import kotlinx.android.synthetic.main.fragment_main.mainSwipeRefresh
 import murki.githubexplorer.GithubExplorerApp
@@ -24,7 +27,7 @@ import murki.githubexplorer.viewmodel.RepoItemVM
 
 class MainFragment : Fragment() {
 
-    private var itemsCall: ApolloQueryCall<MyReposQuery.Data>? = null
+    private var itemsFetchDisposable: Disposable? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
@@ -79,30 +82,27 @@ class MainFragment : Fragment() {
 
         val githubExplorerApp = activity?.applicationContext as GithubExplorerApp
 
-        itemsCall = githubExplorerApp.apolloClient.query(
+        val itemsFetchObservable = Rx2Apollo.from(githubExplorerApp.apolloClient.query(
                 MyReposQuery.builder()
                         .last(10)
-                        .build()
+                        .build())
         )
 
-        itemsCall?.enqueue(object : ApolloCall.Callback<MyReposQuery.Data>() {
-            override fun onResponse(response: Response<MyReposQuery.Data>) {
-                Log.d(CLASSNAME, "onResponse() - Displaying card VMs in Adapter")
-                val repoItemVMs: List<RepoItemVM>? = response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
-                    RepoItemVM(it.name(), it.description())
-                }
-                activity?.runOnUiThread {
-                    isRefreshing(false)
-                    showListItems(ArrayList(repoItemVMs))
-                }
+        itemsFetchDisposable = itemsFetchObservable.subscribe({ response ->
+            Log.d(CLASSNAME, "onResponse() - Displaying card VMs in Adapter")
+            // TODO: deal with response.errors()
+            val repoItemVMs: List<RepoItemVM>? = response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
+                RepoItemVM(it.name(), it.description())
             }
-
-            override fun onFailure(e: ApolloException) {
-                Log.e(CLASSNAME, "onFailure() - ERROR", e)
-                activity?.runOnUiThread {
-                    isRefreshing(false)
-                    Toast.makeText(activity, "OnError=" + e.message, Toast.LENGTH_LONG).show()
-                }
+            activity?.runOnUiThread {
+                isRefreshing(false)
+                showListItems(ArrayList(repoItemVMs))
+            }
+        }, { error ->
+            Log.e(CLASSNAME, "onFailure() - ERROR", error)
+            activity?.runOnUiThread {
+                isRefreshing(false)
+                Toast.makeText(activity, "OnError=" + error.message, Toast.LENGTH_LONG).show()
             }
         })
     }
@@ -112,7 +112,7 @@ class MainFragment : Fragment() {
     }
 
     private fun cancelRequest() {
-        itemsCall?.cancel()
+        itemsFetchDisposable?.dispose()
     }
 
     companion object {
