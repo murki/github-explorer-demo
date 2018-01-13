@@ -1,6 +1,7 @@
 package murki.githubexplorer.ui
 
 
+import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.os.Parcelable
 import android.support.v4.app.Fragment
@@ -9,27 +10,27 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
-import com.apollographql.apollo.ApolloCall
-import com.apollographql.apollo.ApolloQueryCall
-import com.apollographql.apollo.api.Response
-import com.apollographql.apollo.exception.ApolloException
-import com.apollographql.apollo.rx2.Rx2Apollo
-import io.reactivex.Observable
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.disposables.Disposable
 import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.fragment_main.mainRecyclerView
 import kotlinx.android.synthetic.main.fragment_main.mainSwipeRefresh
-import murki.githubexplorer.GithubExplorerApp
-
 import murki.githubexplorer.R
-import murki.githubexplorer.data.MyReposQuery
+import murki.githubexplorer.viewmodel.MainViewModel
 import murki.githubexplorer.viewmodel.RepoItemVM
 
 
 class MainFragment : Fragment() {
 
+    private lateinit var mainViewModel: MainViewModel
     private var itemsFetchDisposable: Disposable? = null
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        // TODO: Switch to use of ViewModelFactory so we don't use Reflection
+        mainViewModel = ViewModelProviders.of(this).get(MainViewModel::class.java)
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         // Inflate the layout for this fragment
@@ -55,6 +56,7 @@ class MainFragment : Fragment() {
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
+        Log.d(CLASSNAME, "onSaveInstanceState()")
         val adapter = mainRecyclerView.adapter as MainAdapter?
         // using let to only execute block if not null
         adapter?.dataset?.let {
@@ -74,32 +76,21 @@ class MainFragment : Fragment() {
     }
 
     private fun reloadFromSavedState(savedInstanceState: Bundle) {
+        Log.d(CLASSNAME, "reloadFromSavedState()")
         showListItems(savedInstanceState.getParcelableArrayList(MAIN_ADAPTER_LIST))
     }
 
     private fun fetchItems() {
+        Log.d(CLASSNAME, "fetchItems()")
         isRefreshing(true)
 
         cancelRequest()
 
-        val githubExplorerApp = activity?.applicationContext as GithubExplorerApp
-
-        val itemsFetchObservable = Rx2Apollo.from(githubExplorerApp.apolloClient.query(
-                MyReposQuery.builder()
-                        .last(10)
-                        .build())
-        )
-
-        itemsFetchDisposable = itemsFetchObservable
+        itemsFetchDisposable = mainViewModel.repoItems(10)
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe({ response ->
+                .subscribe({ repoItemVMs ->
                     Log.d(CLASSNAME, "onResponse() - Displaying card VMs in Adapter")
-                    // TODO: deal with response.errors()
-                    // TODO: Move mapping into ViewModel
-                    val repoItemVMs: List<RepoItemVM>? = response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
-                        RepoItemVM(it.name(), it.description())
-                    }
                     isRefreshing(false)
                     showListItems(ArrayList(repoItemVMs))
                 }, { error ->
@@ -110,10 +101,12 @@ class MainFragment : Fragment() {
     }
 
     private fun showListItems(repoItemVMs: ArrayList<RepoItemVM>?) {
-        mainRecyclerView?.swapAdapter(MainAdapter(repoItemVMs), false)
+        // TODO: Use DiffUtils/stable Ids/notify exact changes
+        mainRecyclerView?.swapAdapter(MainAdapter(repoItemVMs), true)
     }
 
     private fun cancelRequest() {
+        // TODO: This prevents long running operation to resume after config changes
         itemsFetchDisposable?.dispose()
     }
 
