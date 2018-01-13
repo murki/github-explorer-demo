@@ -7392,6 +7392,18 @@
           "description": "An Issue is a place to discuss ideas, enhancements, tasks, and bugs for a project.",
           "fields": [
             {
+              "name": "activeLockReason",
+              "description": "Reason that the conversation was locked.",
+              "args": [],
+              "type": {
+                "kind": "ENUM",
+                "name": "LockReason",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "assignees",
               "description": "A list of Users assigned to this object.",
               "args": [
@@ -9949,6 +9961,18 @@
           "description": "A repository pull request.",
           "fields": [
             {
+              "name": "activeLockReason",
+              "description": "Reason that the conversation was locked.",
+              "args": [],
+              "type": {
+                "kind": "ENUM",
+                "name": "LockReason",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "additions",
               "description": "The number of additions in this pull request.",
               "args": [],
@@ -11365,6 +11389,18 @@
           "description": "An object that can be locked.",
           "fields": [
             {
+              "name": "activeLockReason",
+              "description": "Reason that the conversation was locked.",
+              "args": [],
+              "type": {
+                "kind": "ENUM",
+                "name": "LockReason",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "locked",
               "description": "`true` if the object is locked",
               "args": [],
@@ -11396,6 +11432,41 @@
               "ofType": null
             }
           ]
+        },
+        {
+          "kind": "ENUM",
+          "name": "LockReason",
+          "description": "The possible reasons that an issue or pull request was locked.",
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": [
+            {
+              "name": "OFF_TOPIC",
+              "description": "The issue or pull request was locked because the conversation was off-topic.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "TOO_HEATED",
+              "description": "The issue or pull request was locked because the conversation was too heated.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "RESOLVED",
+              "description": "The issue or pull request was locked because the conversation was resolved.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "SPAM",
+              "description": "The issue or pull request was locked because the conversation was spam.",
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "possibleTypes": null
         },
         {
           "kind": "INTERFACE",
@@ -15469,67 +15540,6 @@
             {
               "kind": "INTERFACE",
               "name": "GitObject",
-              "ofType": null
-            }
-          ],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
-          "kind": "OBJECT",
-          "name": "Language",
-          "description": "Represents a given language found in repositories.",
-          "fields": [
-            {
-              "name": "color",
-              "description": "The color defined for the current language.",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "id",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "ID",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "name",
-              "description": "The name of the current language.",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "String",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [
-            {
-              "kind": "INTERFACE",
-              "name": "Node",
               "ofType": null
             }
           ],
@@ -22935,6 +22945,67 @@
           "possibleTypes": null
         },
         {
+          "kind": "OBJECT",
+          "name": "Language",
+          "description": "Represents a given language found in repositories.",
+          "fields": [
+            {
+              "name": "color",
+              "description": "The color defined for the current language.",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "id",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "ID",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "name",
+              "description": "The name of the current language.",
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [
+            {
+              "kind": "INTERFACE",
+              "name": "Node",
+              "ofType": null
+            }
+          ],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
           "kind": "SCALAR",
           "name": "Date",
           "description": "An ISO-8601 encoded date string.",
@@ -25520,6 +25591,18 @@
               "deprecationReason": null
             },
             {
+              "name": "closer",
+              "description": "Object which triggered the creation of this event.",
+              "args": [],
+              "type": {
+                "kind": "UNION",
+                "name": "Closer",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "commit",
               "description": "Identifies the commit associated with the 'closed' event.",
               "args": [],
@@ -25528,8 +25611,8 @@
                 "name": "Commit",
                 "ofType": null
               },
-              "isDeprecated": false,
-              "deprecationReason": null
+              "isDeprecated": true,
+              "deprecationReason": "Use ClosedEvent.closer instead."
             },
             {
               "name": "createdAt",
@@ -25574,6 +25657,27 @@
           ],
           "enumValues": null,
           "possibleTypes": null
+        },
+        {
+          "kind": "UNION",
+          "name": "Closer",
+          "description": "The object which triggered a `ClosedEvent`.",
+          "fields": null,
+          "inputFields": null,
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": [
+            {
+              "kind": "OBJECT",
+              "name": "Commit",
+              "ofType": null
+            },
+            {
+              "kind": "OBJECT",
+              "name": "PullRequest",
+              "ofType": null
+            }
+          ]
         },
         {
           "kind": "OBJECT",
@@ -34673,6 +34777,33 @@
               "deprecationReason": null
             },
             {
+              "name": "lockLockable",
+              "description": "Lock a lockable object",
+              "args": [
+                {
+                  "name": "input",
+                  "description": null,
+                  "type": {
+                    "kind": "NON_NULL",
+                    "name": null,
+                    "ofType": {
+                      "kind": "INPUT_OBJECT",
+                      "name": "LockLockableInput",
+                      "ofType": null
+                    }
+                  },
+                  "defaultValue": null
+                }
+              ],
+              "type": {
+                "kind": "OBJECT",
+                "name": "LockLockablePayload",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "moveProjectCard",
               "description": "Moves a project card to another place.",
               "args": [
@@ -36502,6 +36633,86 @@
                   "name": "ID",
                   "ofType": null
                 }
+              },
+              "defaultValue": null
+            }
+          ],
+          "interfaces": null,
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "OBJECT",
+          "name": "LockLockablePayload",
+          "description": "Autogenerated return type of LockLockable",
+          "fields": [
+            {
+              "name": "clientMutationId",
+              "description": "A unique identifier for the client performing the mutation.",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "lockedRecord",
+              "description": "The item that was locked.",
+              "args": [],
+              "type": {
+                "kind": "INTERFACE",
+                "name": "Lockable",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "INPUT_OBJECT",
+          "name": "LockLockableInput",
+          "description": "Autogenerated input type of LockLockable",
+          "fields": null,
+          "inputFields": [
+            {
+              "name": "clientMutationId",
+              "description": "A unique identifier for the client performing the mutation.",
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "lockableId",
+              "description": "ID of the issue or pull request to be locked.",
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "ID",
+                  "ofType": null
+                }
+              },
+              "defaultValue": null
+            },
+            {
+              "name": "lockReason",
+              "description": "A reason for why the issue or pull request will be locked.",
+              "type": {
+                "kind": "ENUM",
+                "name": "LockReason",
+                "ofType": null
               },
               "defaultValue": null
             }

@@ -68,3 +68,18 @@ task introspectGithubSchema(type: ApolloSchemaIntrospectionTask) {
     setUrl("https://api.github.com/graphql")
     setOutput(project.projectDir.absolutePath + "/src/main/graphql/murki/githubexplorer/data/schema.json")
 }
+
+tasks.whenTaskAdded { task ->
+    if (task.name.startsWith('generate') && task.name.endsWith('ApolloIR')) {
+        // we will always download the latest GraphQL schema on gradle build before generating the classes
+        // i.e. before executing the task named "generate*ApolloIR"
+        task.dependsOn introspectGithubSchema
+    }
+}
+
+if (project.gradle.startParameter.isOffline()) {
+    afterEvaluate {
+        println "Disabling introspectGithubSchema task since we're offline"
+        tasks.introspectYammerSchema.deleteAllActions()
+    }
+}
