@@ -3,83 +3,86 @@ package murki.githubexplorer.viewmodel
 import android.app.Application
 import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.LiveData
-import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.Transformations
 import android.util.Log
 import com.apollographql.apollo.ApolloCall
 import com.apollographql.apollo.api.Response
 import com.apollographql.apollo.exception.ApolloException
+import either.Either
+import either.Left
+import either.Right
+import either.fold
 import murki.githubexplorer.GithubExplorerApp
 import murki.githubexplorer.data.MyReposQuery
+import java.util.concurrent.atomic.AtomicBoolean
 
 // TODO: Switch to plain ViewModel when injecting the apolloClient
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    val repositories: LiveData<Resource<List<RepoItemVM>?>>
-    private val lastCount = MutableLiveData<Long>()
+    val repositories: LiveData<Either<List<RepoItemVM>?, String?>>
 
     init {
-        repositories = Transformations.map(getApplication<GithubExplorerApp>().apolloClient.query(
-                MyReposQuery.builder()
-                        .last(10)
-                        .build()).toLiveData(), { gqlResponse ->
-            if (gqlResponse.response != null && gqlResponse.response.errors().isEmpty()) {
-                Log.d(CLASSNAME, "Data emitted from apollo query with ${gqlResponse.response.data()?.viewer()?.repositories()?.nodes()?.size} items")
-                // Map result if free of errors
-                Resource(gqlResponse.response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
-                    RepoItemVM(it.name(), it.description())
-                })
-            } else if(gqlResponse.exception != null) {
-                Resource(null, gqlResponse.exception.message)
-            } else {
-                Log.e(CLASSNAME, "Response has ${gqlResponse.response?.errors()?.count()} GraphQL error(s)=${gqlResponse.response?.errors()}")
-                Resource(null, gqlResponse.response?.errors()?.toString())
-            }
+        val query: MyReposQuery = MyReposQuery.builder()
+                .last(10)
+                .build()
+        repositories = Transformations.map(ApolloLiveData(getApplication<GithubExplorerApp>().apolloClient.query(query)), { responseEither ->
+            responseEither.fold({ response ->
+                if (response.errors().isEmpty()) {
+                    Log.d(CLASSNAME, "Data emitted from apollo query with ${response.data()?.viewer()?.repositories()?.nodes()?.size} items")
+                    Left(response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
+                        RepoItemVM(it.name(), it.description())
+                    })
+                } else {
+                    Log.e(CLASSNAME, "Response has ${response.errors().count()} GraphQL error(s)=${response.errors()}")
+                    Right(response.errors().toString())
+                }
+            }, { error ->
+                Log.e(CLASSNAME, "Graphql error=${error.message}")
+                Right(error.message)
+            })
         })
     }
 
-    fun setLastCount(value: Long) {
-        if (lastCount.value == value) {
-            return
-        }
-        lastCount.value = value
+    override fun onCleared() {
+        Log.d(CLASSNAME, "ViewModel onCleared() called")
+        repositories as ApolloLiveData<*>
+        repositories.cancel()
     }
 
     companion object {
         private val CLASSNAME: String = "MainViewModel"
     }
 
-    fun <T> ApolloCall<T>.toLiveData() : LiveData<ApolloLiveDataResponse<T>> {
-        return object: LiveData<ApolloLiveDataResponse<T>>() {
+    class ApolloLiveData<T>(private val call: ApolloCall<T>) : LiveData<Either<Response<T>, ApolloException>>() {
+        private val started = AtomicBoolean(false)
 
-            lateinit var clonedCall: ApolloCall<T>
-
-            override fun onActive() {
-                Log.d(CLASSNAME, "LiveData onActive() called - cloning and enqueueing Apollo call")
-                clonedCall = this@toLiveData.clone()
-                clonedCall.enqueue(object: ApolloCall.Callback<T>() {
+        override fun onActive() {
+            Log.d(CLASSNAME, "ApolloLiveData onActive() called")
+            if (started.compareAndSet(false, true)) { // ensure there is only one ongoing call
+                Log.d(CLASSNAME, "Enqueueing Apollo call")
+                call.enqueue(object : ApolloCall.Callback<T>() {
                     override fun onResponse(response: Response<T>) {
                         Log.d(CLASSNAME, "Apollo onResponse() callback. Thread=${Thread.currentThread().name}")
-                        postValue(ApolloLiveDataResponse(response))
+                        postValue(Left(response))
                     }
 
                     override fun onFailure(ex: ApolloException) {
                         Log.e(CLASSNAME, "Apollo onFailure() callback. Msg=${ex.message}, Thread=${Thread.currentThread().name}")
-                        postValue(ApolloLiveDataResponse(null, ex))
+                        postValue(Right(ex))
                     }
 
                 })
             }
+        }
 
-            override fun onInactive() {
-                Log.d(CLASSNAME, "LiveData onInactive() called - cancelling Apollo call")
-                clonedCall.cancel()
+        override fun onInactive() {
+            Log.d(CLASSNAME, "LiveData onInactive() called")
+        }
+
+        fun cancel() {
+            if (!call.isCanceled) {
+                call.cancel()
             }
         }
     }
-
-    // TODO: Convert into type Either
-    data class ApolloLiveDataResponse<T>(val response: Response<T>? = null, val exception: ApolloException? = null)
-
-    data class Resource<out T>(val data: T? = null, val errorMessage: String? = null)
 }

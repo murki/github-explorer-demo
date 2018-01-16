@@ -10,6 +10,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import either.fold
 import kotlinx.android.synthetic.main.fragment_main.mainRecyclerView
 import kotlinx.android.synthetic.main.fragment_main.mainSwipeRefresh
 import murki.githubexplorer.R
@@ -76,17 +77,16 @@ class MainFragment : Fragment() {
         Log.d(CLASSNAME, "fetchItems()")
         isRefreshing(true)
 
-        mainViewModel.setLastCount(10)
-        mainViewModel.repositories.observe(this, Observer { repoItemVMs ->
+        mainViewModel.repositories.observe(this, Observer { resultEither ->
             Log.d(CLASSNAME, "Observer onChanged() called")
             isRefreshing(false)
-            if (repoItemVMs?.data != null) {
+            resultEither?.fold({ data ->
                 Log.d(CLASSNAME, "Success - Displaying card VMs in Adapter")
-                showListItems(ArrayList(repoItemVMs.data))
-            } else {
-                Log.e(CLASSNAME, "Error - ${repoItemVMs?.errorMessage}")
+                showListItems(ArrayList(data))
+            }, { errorMessage ->
+                Log.e(CLASSNAME, "Error - $errorMessage")
                 Toast.makeText(activity, "Error fetching Repo items", Toast.LENGTH_LONG).show()
-            }
+            })
         })
     }
 
