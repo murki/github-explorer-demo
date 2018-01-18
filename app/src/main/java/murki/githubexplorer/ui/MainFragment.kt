@@ -11,6 +11,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import either.fold
+import kotlinx.android.synthetic.main.fragment_main.btnRepoList
+import kotlinx.android.synthetic.main.fragment_main.editTextRepoCount
 import kotlinx.android.synthetic.main.fragment_main.mainRecyclerView
 import kotlinx.android.synthetic.main.fragment_main.mainSwipeRefresh
 import murki.githubexplorer.R
@@ -40,15 +42,18 @@ class MainFragment : Fragment() {
         mainSwipeRefresh.setColorSchemeResources(android.R.color.holo_blue_dark)
         mainSwipeRefresh.setOnRefreshListener {
             isRefreshing(true)
-            mainViewModel.setLastCountAndTrigger(10)
+            mainViewModel.setLastCountAndTrigger(editTextRepoCount.text.toString().toLong())
+        }
+
+        btnRepoList.setOnClickListener {
+            isRefreshing(true)
+            mainViewModel.setLastCount(editTextRepoCount.text.toString().toLong())
         }
 
         mainRecyclerView.setHasFixedSize(true)
         showListItems(ArrayList())
 
         Log.d(CLASSNAME, "mainViewModel.repositories.observe()")
-        isRefreshing(true)
-        mainViewModel.setLastCount(10)
         mainViewModel.repositories.observe(this, Observer { resultEither ->
             Log.d(CLASSNAME, "Observer onChanged() called")
             isRefreshing(false)

@@ -6,18 +6,45 @@
     android:layout_height="match_parent"
     tools:context="murki.githubexplorer.ui.MainFragment">
 
-    <android.support.v4.widget.SwipeRefreshLayout
-        android:id="@+id/mainSwipeRefresh"
+    <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <android.support.v7.widget.RecyclerView
-            android:id="@+id/mainRecyclerView"
+        <EditText
+            android:id="@+id/editTextRepoCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:width="40sp"
+            tools:text="10" />
+
+        <Button
+            android:id="@+id/btnRepoList"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="24dp"
+            android:labelFor="@+id/editTextRepoCount"
+            android:text="@string/btn_repo_list"
+            app:layout_constraintStart_toEndOf="@+id/editTextRepoCount"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <android.support.v4.widget.SwipeRefreshLayout
+            android:id="@+id/mainSwipeRefresh"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:scrollbars="vertical"
-            app:layoutManager="LinearLayoutManager"
-            tools:listitem="@layout/repo_item" />
-    </android.support.v4.widget.SwipeRefreshLayout>
+            android:layout_marginTop="48dp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btnRepoList">
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/mainRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scrollbars="vertical"
+                app:layoutManager="LinearLayoutManager"
+                tools:listitem="@layout/repo_item" />
+        </android.support.v4.widget.SwipeRefreshLayout>
+    </android.support.constraint.ConstraintLayout>
 
 </FrameLayout>
