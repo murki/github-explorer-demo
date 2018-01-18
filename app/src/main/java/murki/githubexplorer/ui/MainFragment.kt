@@ -39,44 +39,16 @@ class MainFragment : Fragment() {
 
         mainSwipeRefresh.setColorSchemeResources(android.R.color.holo_blue_dark)
         mainSwipeRefresh.setOnRefreshListener {
-            fetchItems()
+            isRefreshing(true)
+            mainViewModel.setLastCountAndTrigger(10)
         }
 
         mainRecyclerView.setHasFixedSize(true)
         showListItems(ArrayList())
 
-        fetchItems()
-//        when (savedInstanceState) {
-//            null -> fetchItems()
-//            else -> reloadFromSavedState(savedInstanceState)
-//        }
-    }
-
-//    override fun onSaveInstanceState(outState: Bundle) {
-//        super.onSaveInstanceState(outState)
-//        Log.d(CLASSNAME, "onSaveInstanceState()")
-//        val adapter = mainRecyclerView.adapter as MainAdapter?
-//        // using let to only execute block if not null
-//        adapter?.dataset?.let {
-//            outState.putParcelableArrayList(MAIN_ADAPTER_LIST, it as ArrayList<out Parcelable>)
-//        }
-//    }
-
-    private fun isRefreshing(isRefreshing: Boolean) {
-        mainSwipeRefresh?.post({
-            mainSwipeRefresh.isRefreshing = isRefreshing
-        })
-    }
-
-//    private fun reloadFromSavedState(savedInstanceState: Bundle) {
-//        Log.d(CLASSNAME, "reloadFromSavedState()")
-//        showListItems(savedInstanceState.getParcelableArrayList(MAIN_ADAPTER_LIST))
-//    }
-
-    private fun fetchItems() {
-        Log.d(CLASSNAME, "fetchItems()")
+        Log.d(CLASSNAME, "mainViewModel.repositories.observe()")
         isRefreshing(true)
-
+        mainViewModel.setLastCount(10)
         mainViewModel.repositories.observe(this, Observer { resultEither ->
             Log.d(CLASSNAME, "Observer onChanged() called")
             isRefreshing(false)
@@ -90,6 +62,12 @@ class MainFragment : Fragment() {
         })
     }
 
+    private fun isRefreshing(isRefreshing: Boolean) {
+        mainSwipeRefresh?.post({
+            mainSwipeRefresh.isRefreshing = isRefreshing
+        })
+    }
+
     private fun showListItems(repoItemVMs: ArrayList<RepoItemVM>?) {
         // TODO: Use DiffUtils/stable Ids/notify exact changes
         mainRecyclerView?.swapAdapter(MainAdapter(repoItemVMs), true)
@@ -97,6 +75,5 @@ class MainFragment : Fragment() {
 
     companion object {
         private val CLASSNAME: String = "MainFragment"
-//        private val MAIN_ADAPTER_LIST: String = "MainAdapterListKey"
     }
 }
