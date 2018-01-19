@@ -29,7 +29,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     if (response.errors().isEmpty()) {
                         Log.d(CLASSNAME, "Data emitted from apollo query with ${response.data()?.viewer()?.repositories()?.nodes()?.size} items")
                         Left(response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
-                            RepoItemVM(it.name(), it.description())
+                            RepoItemVM(it.id(), it.name(), it.description())
                         })
                     } else {
                         Log.e(CLASSNAME, "Response has ${response.errors().count()} GraphQL error(s)=${response.errors()}")
@@ -44,13 +44,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun setLastCount(value: Long) {
-        if (lastCountTrigger.value == value) {
-            return
-        }
-        lastCountTrigger.value = value
-    }
-
-    fun setLastCountAndTrigger(value: Long) {
         lastCountTrigger.value = value
     }
 

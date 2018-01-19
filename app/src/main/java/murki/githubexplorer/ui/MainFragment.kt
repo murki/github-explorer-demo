@@ -5,6 +5,7 @@ import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v4.app.Fragment
+import android.support.v7.util.DiffUtil
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -42,7 +43,7 @@ class MainFragment : Fragment() {
         mainSwipeRefresh.setColorSchemeResources(android.R.color.holo_blue_dark)
         mainSwipeRefresh.setOnRefreshListener {
             isRefreshing(true)
-            mainViewModel.setLastCountAndTrigger(editTextRepoCount.text.toString().toLong())
+            mainViewModel.setLastCount(editTextRepoCount.text.toString().toLong())
         }
 
         btnRepoList.setOnClickListener {
@@ -51,15 +52,17 @@ class MainFragment : Fragment() {
         }
 
         mainRecyclerView.setHasFixedSize(true)
-        showListItems(ArrayList())
+        mainRecyclerView.adapter = MainAdapter()
 
         Log.d(CLASSNAME, "mainViewModel.repositories.observe()")
         mainViewModel.repositories.observe(this, Observer { resultEither ->
             Log.d(CLASSNAME, "Observer onChanged() called")
             isRefreshing(false)
             resultEither?.fold({ data ->
-                Log.d(CLASSNAME, "Success - Displaying card VMs in Adapter")
-                showListItems(ArrayList(data))
+                data?.let {
+                    Log.d(CLASSNAME, "Success - Displaying card VMs in Adapter")
+                    showListItems(it)
+                }
             }, { errorMessage ->
                 Log.e(CLASSNAME, "Error - $errorMessage")
                 Toast.makeText(activity, "Error fetching Repo items", Toast.LENGTH_LONG).show()
@@ -73,9 +76,35 @@ class MainFragment : Fragment() {
         })
     }
 
-    private fun showListItems(repoItemVMs: ArrayList<RepoItemVM>?) {
-        // TODO: Use DiffUtils/stable Ids/notify exact changes
-        mainRecyclerView?.swapAdapter(MainAdapter(repoItemVMs), true)
+    private fun showListItems(repoItemVMs: List<RepoItemVM>) {
+        (mainRecyclerView?.adapter as? MainAdapter)?.let { adapter ->
+            if (adapter.dataset.isEmpty()) {
+                adapter.dataset = repoItemVMs
+                adapter.notifyItemRangeInserted(0, repoItemVMs.size)
+            } else {
+                // TODO: Use the new (Paged)ListAdapter instead: https://github.com/googlesamples/android-architecture-components/issues/135#issuecomment-330414355
+                val result = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+                    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                        return adapter.dataset[oldItemPosition].id == repoItemVMs[newItemPosition].id
+                    }
+
+                    override fun getOldListSize(): Int {
+                        return adapter.dataset.size
+                    }
+
+                    override fun getNewListSize(): Int {
+                        return repoItemVMs.size
+                    }
+
+                    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                        return adapter.dataset[oldItemPosition] == repoItemVMs[newItemPosition]
+                    }
+
+                })
+                adapter.dataset = repoItemVMs
+                result.dispatchUpdatesTo(adapter)
+            }
+        }
     }
 
     companion object {
