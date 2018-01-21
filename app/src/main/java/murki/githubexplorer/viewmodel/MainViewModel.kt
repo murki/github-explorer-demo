@@ -6,6 +6,7 @@ import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.Transformations
 import android.util.Log
+import com.apollographql.apollo.fetcher.ApolloResponseFetchers
 import either.Either
 import either.Left
 import either.Right
@@ -18,19 +19,21 @@ import murki.githubexplorer.framework.ApolloLiveData
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     private val lastCountTrigger = MutableLiveData<Long>()
-    val repositories: LiveData<Either<List<RepoItemVM>?, String?>>
+    val repositories: LiveData<Either<CachedResultVM<List<RepoItemVM>?>, String?>>
 
     init {
         repositories = Transformations.switchMap(lastCountTrigger, { lastCount ->
-            Transformations.map(ApolloLiveData(getApplication<GithubExplorerApp>().apolloClient.query(MyReposQuery.builder()
-                    .last(lastCount)
-                    .build())), { responseEither ->
+            Transformations.map(ApolloLiveData(getApplication<GithubExplorerApp>().apolloClient.query(
+                    MyReposQuery.builder()
+                            .last(lastCount)
+                            .build())
+                    .responseFetcher(ApolloResponseFetchers.CACHE_AND_NETWORK)), { responseEither ->
                 responseEither.fold({ response ->
                     if (response.errors().isEmpty()) {
                         Log.d(CLASSNAME, "Data emitted from apollo query with ${response.data()?.viewer()?.repositories()?.nodes()?.size} items")
-                        Left(response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
-                            RepoItemVM(it.id(), it.name(), it.description())
-                        })
+                        Left(CachedResultVM(response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
+                             RepoItemVM(it.id(), it.name(), it.description())
+                        }, response.fromCache()))
                     } else {
                         Log.e(CLASSNAME, "Response has ${response.errors().count()} GraphQL error(s)=${response.errors()}")
                         Right(response.errors().toString())

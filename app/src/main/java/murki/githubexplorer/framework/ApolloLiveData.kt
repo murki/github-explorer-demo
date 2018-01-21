@@ -20,7 +20,7 @@ class ApolloLiveData<T>(private val call: ApolloCall<T>) : LiveData<Either<Respo
             Log.d(CLASSNAME, "Enqueueing Apollo call")
             call.enqueue(object : ApolloCall.Callback<T>() {
                 override fun onResponse(response: Response<T>) {
-                    Log.d(CLASSNAME, "Apollo onResponse() callback. Thread=${Thread.currentThread().name}")
+                    Log.d(CLASSNAME, "Apollo onResponse() callback. FromCache=${response.fromCache()}, Thread=${Thread.currentThread().name}")
                     postValue(Left(response))
                 }
 

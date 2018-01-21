@@ -57,13 +57,17 @@ class MainFragment : Fragment() {
         Log.d(CLASSNAME, "mainViewModel.repositories.observe()")
         mainViewModel.repositories.observe(this, Observer { resultEither ->
             Log.d(CLASSNAME, "Observer onChanged() called")
-            isRefreshing(false)
-            resultEither?.fold({ data ->
-                data?.let {
+            resultEither?.fold({ result ->
+                if (!result.isFromCache) {
+                    // if data returned from cache, keep the loading indicator
+                    isRefreshing(false)
+                }
+                result.data?.let { data ->
                     Log.d(CLASSNAME, "Success - Displaying card VMs in Adapter")
-                    showListItems(it)
+                    showListItems(data)
                 }
             }, { errorMessage ->
+                isRefreshing(false)
                 Log.e(CLASSNAME, "Error - $errorMessage")
                 Toast.makeText(activity, "Error fetching Repo items", Toast.LENGTH_LONG).show()
             })
@@ -108,6 +112,6 @@ class MainFragment : Fragment() {
     }
 
     companion object {
-        private val CLASSNAME: String = "MainFragment"
+        private const val CLASSNAME: String = "MainFragment"
     }
 }
