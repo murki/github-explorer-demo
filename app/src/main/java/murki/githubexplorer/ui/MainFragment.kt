@@ -81,34 +81,7 @@ class MainFragment : Fragment() {
     }
 
     private fun showListItems(repoItemVMs: List<RepoItemVM>) {
-        (mainRecyclerView?.adapter as? MainAdapter)?.let { adapter ->
-            if (adapter.dataset.isEmpty()) {
-                adapter.dataset = repoItemVMs
-                adapter.notifyItemRangeInserted(0, repoItemVMs.size)
-            } else {
-                // TODO: Use the new (Paged)ListAdapter instead: https://github.com/googlesamples/android-architecture-components/issues/135#issuecomment-330414355
-                val result = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
-                    override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                        return adapter.dataset[oldItemPosition].id == repoItemVMs[newItemPosition].id
-                    }
-
-                    override fun getOldListSize(): Int {
-                        return adapter.dataset.size
-                    }
-
-                    override fun getNewListSize(): Int {
-                        return repoItemVMs.size
-                    }
-
-                    override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                        return adapter.dataset[oldItemPosition] == repoItemVMs[newItemPosition]
-                    }
-
-                })
-                adapter.dataset = repoItemVMs
-                result.dispatchUpdatesTo(adapter)
-            }
-        }
+        (mainRecyclerView?.adapter as? MainAdapter)?.setList(repoItemVMs)
     }
 
     companion object {
