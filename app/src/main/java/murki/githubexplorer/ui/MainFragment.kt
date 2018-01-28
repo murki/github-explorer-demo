@@ -5,7 +5,6 @@ import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
 import android.os.Bundle
 import android.support.v4.app.Fragment
-import android.support.v7.util.DiffUtil
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -43,12 +42,12 @@ class MainFragment : Fragment() {
         mainSwipeRefresh.setColorSchemeResources(android.R.color.holo_blue_dark)
         mainSwipeRefresh.setOnRefreshListener {
             isRefreshing(true)
-            mainViewModel.setLastCount(editTextRepoCount.text.toString().toLong())
+            mainViewModel.setCount(editTextRepoCount.text.toString().toLong())
         }
 
         btnRepoList.setOnClickListener {
             isRefreshing(true)
-            mainViewModel.setLastCount(editTextRepoCount.text.toString().toLong())
+            mainViewModel.setCount(editTextRepoCount.text.toString().toLong())
         }
 
         mainRecyclerView.setHasFixedSize(true)

@@ -1,10 +1,13 @@
-query MyRepos($last: Int!) {
+query MyRepos($count: Int!, $after: String) {
   viewer {
-    repositories(last: $last) {
-      nodes {
-        id
-        name
-        description
+    repositories(first: $count, after:$after) {
+      repositoryEdges: edges {
+        cursor
+        repositoryNode: node {
+          id
+          name
+          description
+        }
       }
     }
   }

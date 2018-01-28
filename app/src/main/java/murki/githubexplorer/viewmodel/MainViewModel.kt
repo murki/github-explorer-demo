@@ -18,21 +18,23 @@ import murki.githubexplorer.framework.ApolloLiveData
 // TODO: Switch to plain ViewModel when injecting the apolloClient
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val lastCountTrigger = MutableLiveData<Long>()
+    private val countTrigger = MutableLiveData<Long>()
     val repositories: LiveData<Either<CachedResultVM<List<RepoItemVM>?>, String?>>
 
     init {
-        repositories = Transformations.switchMap(lastCountTrigger, { lastCount ->
+        repositories = Transformations.switchMap(countTrigger, { count ->
             Transformations.map(ApolloLiveData(getApplication<GithubExplorerApp>().apolloClient.query(
                     MyReposQuery.builder()
-                            .last(lastCount)
+                            .count(count)
                             .build())
                     .responseFetcher(ApolloResponseFetchers.CACHE_AND_NETWORK)), { responseEither ->
                 responseEither.fold({ response ->
                     if (response.errors().isEmpty()) {
-                        Log.d(CLASSNAME, "Data emitted from apollo query with ${response.data()?.viewer()?.repositories()?.nodes()?.size} items")
-                        Left(CachedResultVM(response.data()?.viewer()?.repositories()?.nodes()?.map { it ->
-                             RepoItemVM(it.id(), it.name(), it.description())
+                        Log.d(CLASSNAME, "Data emitted from apollo query with ${response.data()?.viewer()?.repositories()?.repositoryEdges()?.size} items")
+                        Left(CachedResultVM(response.data()?.viewer()?.repositories()?.repositoryEdges()?.mapNotNull {
+                            it.repositoryNode()?.let {
+                                RepoItemVM(it.id(), it.name(), it.description())
+                            }
                         }, response.fromCache()))
                     } else {
                         Log.e(CLASSNAME, "Response has ${response.errors().count()} GraphQL error(s)=${response.errors()}")
@@ -46,8 +48,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         })
     }
 
-    fun setLastCount(value: Long) {
-        lastCountTrigger.value = value
+    fun setCount(value: Long) {
+        countTrigger.value = value
     }
 
     override fun onCleared() {
