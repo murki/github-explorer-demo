@@ -5,46 +5,27 @@ import android.arch.lifecycle.AndroidViewModel
 import android.arch.lifecycle.LiveData
 import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.Transformations
+import android.arch.paging.LivePagedListBuilder
+import android.arch.paging.PagedList
 import android.util.Log
-import com.apollographql.apollo.fetcher.ApolloResponseFetchers
-import either.Either
-import either.Left
-import either.Right
-import either.fold
 import murki.githubexplorer.GithubExplorerApp
-import murki.githubexplorer.data.MyReposQuery
-import murki.githubexplorer.framework.ApolloLiveData
+import murki.githubexplorer.domain.RepoDataSourceFactory
 
 // TODO: Switch to plain ViewModel when injecting the apolloClient
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
+    // TODO: Inject
+    private val repoDataSourceFactory: RepoDataSourceFactory = RepoDataSourceFactory(getApplication<GithubExplorerApp>().apolloClient)
     private val countTrigger = MutableLiveData<Long>()
-    val repositories: LiveData<Either<CachedResultVM<List<RepoItemVM>?>, String?>>
+    val repositories: LiveData<PagedList<RepoItemVM>>
 
     init {
         repositories = Transformations.switchMap(countTrigger, { count ->
-            Transformations.map(ApolloLiveData(getApplication<GithubExplorerApp>().apolloClient.query(
-                    MyReposQuery.builder()
-                            .count(count)
-                            .build())
-                    .responseFetcher(ApolloResponseFetchers.CACHE_AND_NETWORK)), { responseEither ->
-                responseEither.fold({ response ->
-                    if (response.errors().isEmpty()) {
-                        Log.d(CLASSNAME, "Data emitted from apollo query with ${response.data()?.viewer()?.repositories()?.repositoryEdges()?.size} items")
-                        Left(CachedResultVM(response.data()?.viewer()?.repositories()?.repositoryEdges()?.mapNotNull {
-                            it.repositoryNode()?.let {
-                                RepoItemVM(it.id(), it.name(), it.description())
-                            }
-                        }, response.fromCache()))
-                    } else {
-                        Log.e(CLASSNAME, "Response has ${response.errors().count()} GraphQL error(s)=${response.errors()}")
-                        Right(response.errors().toString())
-                    }
-                }, { error ->
-                    Log.e(CLASSNAME, "Graphql error=${error.message}")
-                    Right(error.message)
-                })
-            })
+            val pagedListConfig = PagedList.Config.Builder()
+                    .setInitialLoadSizeHint(count.toInt())
+                    .setPageSize(count.toInt())
+                    .build()
+            LivePagedListBuilder(repoDataSourceFactory, pagedListConfig).build()
         })
     }
 
@@ -54,12 +35,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     override fun onCleared() {
         Log.d(CLASSNAME, "ViewModel onCleared() called")
-        repositories as ApolloLiveData<*>
-        repositories.cancel()
+        // TODO: Figure out how to cancel on-going operation
     }
 
     companion object {
-        private val CLASSNAME: String = "MainViewModel"
+        private const val CLASSNAME: String = "MainViewModel"
     }
 
 }

@@ -1,16 +1,14 @@
 package murki.githubexplorer.ui
 
-
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProviders
+import android.arch.paging.PagedList
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.Toast
-import either.fold
 import kotlinx.android.synthetic.main.fragment_main.btnRepoList
 import kotlinx.android.synthetic.main.fragment_main.editTextRepoCount
 import kotlinx.android.synthetic.main.fragment_main.mainRecyclerView
@@ -50,37 +48,27 @@ class MainFragment : Fragment() {
             mainViewModel.setCount(editTextRepoCount.text.toString().toLong())
         }
 
+        val adapter = MainAdapter()
         mainRecyclerView.setHasFixedSize(true)
-        mainRecyclerView.adapter = MainAdapter()
+        mainRecyclerView.adapter = adapter
 
         Log.d(CLASSNAME, "mainViewModel.repositories.observe()")
-        mainViewModel.repositories.observe(this, Observer { resultEither ->
+        mainViewModel.repositories.observe(this, Observer { items ->
             Log.d(CLASSNAME, "Observer onChanged() called")
-            resultEither?.fold({ result ->
-                if (!result.isFromCache) {
-                    // if data returned from cache, keep the loading indicator
-                    isRefreshing(false)
-                }
-                result.data?.let { data ->
-                    Log.d(CLASSNAME, "Success - Displaying card VMs in Adapter")
-                    showListItems(data)
-                }
-            }, { errorMessage ->
-                isRefreshing(false)
-                Log.e(CLASSNAME, "Error - $errorMessage")
-                Toast.makeText(activity, "Error fetching Repo items", Toast.LENGTH_LONG).show()
-            })
+            showListItems(adapter, items)
+            isRefreshing(false)
         })
     }
 
     private fun isRefreshing(isRefreshing: Boolean) {
+        // TODO: Figure out a way to show refresh based on LiveData activity
         mainSwipeRefresh?.post({
             mainSwipeRefresh.isRefreshing = isRefreshing
         })
     }
 
-    private fun showListItems(repoItemVMs: List<RepoItemVM>) {
-        (mainRecyclerView?.adapter as? MainAdapter)?.setList(repoItemVMs)
+    private fun showListItems(adapter: MainAdapter, repoItemVMs: PagedList<RepoItemVM>?) {
+        adapter.setList(repoItemVMs)
     }
 
     companion object {
