@@ -81,7 +81,7 @@ class MainFragment : Fragment() {
     }
 
     private fun showListItems(repoItemVMs: List<RepoItemVM>) {
-        (mainRecyclerView?.adapter as? MainAdapter)?.setList(repoItemVMs)
+        (mainRecyclerView?.adapter as? MainAdapter)?.submitList(repoItemVMs)
     }
 
     companion object {

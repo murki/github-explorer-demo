@@ -1,9 +1,9 @@
 package murki.githubexplorer.ui
 
-import android.support.v7.recyclerview.extensions.DiffCallback
+import android.support.v7.util.DiffUtil
 import murki.githubexplorer.viewmodel.RepoItemVM
 
-class RepoItemDiff : DiffCallback<RepoItemVM>() {
+class RepoItemDiff : DiffUtil.ItemCallback<RepoItemVM>() {
     override fun areItemsTheSame(oldItem: RepoItemVM, newItem: RepoItemVM): Boolean {
         return oldItem.id == newItem.id
     }
